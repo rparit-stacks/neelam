@@ -90,7 +90,7 @@ function CheckoutContent() {
         key: razorpayKeyId,
         amount: product.price * 100,
         currency: "INR",
-        name: "Neelu Mam",
+        name: "Neelam Academy",
         description: product.title,
         order_id: razorpayOrderId,
         handler: async (paymentResponse: any) => {
@@ -107,15 +107,16 @@ function CheckoutContent() {
             }),
           })
 
-          const { success } = await verifyResponse.json()
+          const verifyJson = await verifyResponse.json()
+          const { success } = verifyJson
 
           if (success) {
             console.log("[v0] Payment verified successfully")
             toast.success("Payment successful!")
             router.push(`/success?orderId=${orderId}`)
           } else {
-            console.error("[v0] Payment verification failed")
-            toast.error("Payment verification failed")
+            console.error("[v0] Payment verification failed", verifyJson)
+            toast.error(verifyJson?.error || "Payment verification failed")
           }
         },
         prefill: {

@@ -7,7 +7,7 @@ export async function middleware(request: NextRequest) {
 
   // Only check auth for admin routes
   if (request.nextUrl.pathname.startsWith("/admin") && !request.nextUrl.pathname.startsWith("/admin/login")) {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()

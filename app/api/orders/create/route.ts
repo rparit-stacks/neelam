@@ -29,10 +29,16 @@ export async function POST(request: NextRequest) {
       }),
     })
 
+    if (!razorpayResponse.ok) {
+      const err = await razorpayResponse.text()
+      console.error("[v0] Razorpay order create failed:", err)
+      return NextResponse.json({ error: "Failed to create Razorpay order" }, { status: 500 })
+    }
+
     const razorpayOrder = await razorpayResponse.json()
     console.log("[v0] Razorpay order created:", razorpayOrder.id)
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: order, error } = await supabase
       .from("purchases")
       .insert({

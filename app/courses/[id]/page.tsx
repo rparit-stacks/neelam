@@ -11,8 +11,9 @@ import { RelatedProducts } from "@/components/related-products"
 import { Star, Clock, Users, Calendar, CheckCircle2, ArrowLeft, Award } from "lucide-react"
 import { createServerClient } from "@/lib/supabase"
 
-export default async function CourseDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerClient()
+export default async function CourseDetailPage(props: { params: Promise<{ id: string }> }) {
+  const { params } = await props
+  const supabase = await createServerClient()
 
   const { data: course } = await supabase
     .from("live_courses")

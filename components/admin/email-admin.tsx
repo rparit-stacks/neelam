@@ -46,7 +46,7 @@ export function EmailAdmin() {
 
     try {
       if (emailType === "individual") {
-        await fetch("/api/email/send", {
+        const response = await fetch("/api/email/send", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -57,8 +57,14 @@ export function EmailAdmin() {
           }),
         })
 
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || result.details || "Failed to send email")
+        }
+
         toast({
-          title: "Email sent successfully",
+          title: "✅ Email sent successfully!",
           description: `Email sent to ${formData.recipient}`,
         })
       } else {
@@ -83,33 +89,54 @@ export function EmailAdmin() {
 
         const { data, error } = await query
 
-        if (!error && data) {
-          const uniqueEmails = [...new Set(data.map((p) => p.user_email))]
-
-          // Send emails via API
-          await fetch("/api/email/send-bulk", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              emails: uniqueEmails,
-              subject: formData.subject,
-              body: contentType === "html" ? formData.htmlBody : formData.body,
-              isHtml: contentType === "html",
-            }),
-          })
-
-          toast({
-            title: `Email sent to ${uniqueEmails.length} recipients`,
-            description: "Emails have been queued for delivery",
-          })
+        if (error) {
+          throw new Error(`Database error: ${error.message}`)
         }
+
+        if (!data || data.length === 0) {
+          toast({
+            title: "⚠️ No recipients found",
+            description: "The selected segment has no customers yet.",
+            variant: "destructive",
+          })
+          setSending(false)
+          return
+        }
+
+        const uniqueEmails = [...new Set(data.map((p) => p.user_email))]
+
+        // Send emails via API
+        const response = await fetch("/api/email/send-bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            emails: uniqueEmails,
+            subject: formData.subject,
+            body: contentType === "html" ? formData.htmlBody : formData.body,
+            isHtml: contentType === "html",
+          }),
+        })
+
+        const result = await response.json()
+
+        if (!response.ok) {
+          throw new Error(result.error || "Failed to send bulk emails")
+        }
+
+        toast({
+          title: `✅ Emails sent to ${uniqueEmails.length} recipients!`,
+          description: "All emails have been delivered successfully.",
+        })
       }
 
       setFormData({ recipient: "", subject: "", body: "", htmlBody: "" })
     } catch (error) {
+      console.error("Email send error:", error)
+      const errorMsg = error instanceof Error ? error.message : "Unknown error occurred"
+      
       toast({
-        title: "Error sending email",
-        description: "Please try again later",
+        title: "❌ Error sending email",
+        description: errorMsg,
         variant: "destructive",
       })
     } finally {
@@ -249,10 +276,16 @@ export function EmailAdmin() {
               </div>
             )}
 
-            <Button type="submit" disabled={sending} className="gap-2">
-              <Send className="h-4 w-4" />
-              {sending ? "Sending..." : "Send Email"}
+            <Button type="submit" disabled={sending} className="gap-2 bg-blue-600 hover:bg-blue-700">
+              <Send className={`h-4 w-4 ${sending ? "animate-pulse" : ""}`} />
+              {sending ? "Sending Email..." : "Send Email"}
             </Button>
+            {sending && (
+              <p className="text-sm text-blue-600 flex items-center gap-2">
+                <span className="inline-block h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
+                Please wait, sending your email...
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>
@@ -278,7 +311,7 @@ export function EmailAdmin() {
             </div>
             <div className="flex justify-between py-2">
               <span className="text-muted-foreground">From Name:</span>
-              <span className="font-mono">Neelu Mam</span>
+              <span className="font-mono">Neelam Academy</span>
             </div>
           </div>
         </CardContent>

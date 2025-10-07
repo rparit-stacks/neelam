@@ -27,6 +27,7 @@ export function CoursesAdmin() {
     category: "",
     cover_image: "",
   })
+  const [uploading, setUploading] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -212,13 +213,44 @@ export function CoursesAdmin() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="cover_image">Cover Image URL</Label>
-              <Input
-                id="cover_image"
-                value={formData.cover_image}
-                onChange={(e) => setFormData({ ...formData, cover_image: e.target.value })}
-                placeholder="/course-thumbnail.png"
-              />
+              <Label htmlFor="cover_image">Cover Image</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="cover_image"
+                  value={formData.cover_image}
+                  onChange={(e) => setFormData({ ...formData, cover_image: e.target.value })}
+                  placeholder="Paste URL or upload file"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    const input = document.createElement("input")
+                    input.type = "file"
+                    input.accept = "image/*"
+                    input.onchange = async () => {
+                      if (!input.files || input.files.length === 0) return
+                      setUploading(true)
+                      const file = input.files[0]
+                      const data = new FormData()
+                      data.append("file", file)
+                      data.append("folder", "covers")
+                      const res = await fetch("/api/upload", { method: "POST", body: data })
+                      const json = await res.json()
+                      setUploading(false)
+                      if (!res.ok) return alert(json.error || "Upload failed")
+                      setFormData({ ...formData, cover_image: json.url })
+                    }
+                    input.click()
+                  }}
+                  disabled={uploading}
+                >
+                  {uploading ? "Uploading..." : "Upload"}
+                </Button>
+              </div>
+              {formData.cover_image && (
+                <p className="text-xs text-muted-foreground">Saved: {formData.cover_image}</p>
+              )}
             </div>
 
             <div className="flex gap-2">

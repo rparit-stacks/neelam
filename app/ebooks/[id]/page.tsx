@@ -11,10 +11,16 @@ import { RelatedProducts } from "@/components/related-products"
 import { BookOpen, Star, Award, CheckCircle2, ArrowLeft } from "lucide-react"
 import { createServerClient } from "@/lib/supabase"
 
-export default async function EbookDetailPage({ params }: { params: { id: string } }) {
-  const supabase = createServerClient()
+export default async function EbookDetailPage(props: { params: Promise<{ id: string }> }) {
+  const { params } = await props
+  const supabase = await createServerClient()
 
-  const { data: ebook } = await supabase.from("ebooks").select("*").eq("id", params.id).eq("is_active", true).single()
+  const { data: ebook } = await supabase
+    .from("ebooks")
+    .select("*")
+    .eq("id", params.id)
+    .eq("is_active", true)
+    .single()
 
   if (!ebook) {
     notFound()

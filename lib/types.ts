@@ -72,3 +72,13 @@ export interface EmailLog {
   status: string
   error_message: string | null
 }
+
+export interface Webinar {
+  id: string
+  name: string
+  webinar_link: string
+  banner_image: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}

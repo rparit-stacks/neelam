@@ -6,11 +6,12 @@ import { Badge } from "@/components/ui/badge"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { FloatingIcons } from "@/components/floating-icons"
+import { WebinarBanner } from "@/components/webinar-banner"
 import { BookOpen, Video, Star, Users, Clock, Award, ArrowRight, CheckCircle2 } from "lucide-react"
 import { createServerClient } from "@/lib/supabase"
 
 export default async function HomePage() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data: ebooks } = await supabase.from("ebooks").select("*").eq("is_active", true).limit(3)
 
@@ -23,58 +24,85 @@ export default async function HomePage() {
       <Header />
 
       <main className="flex-1 relative z-10">
-        <section className="relative bg-gradient-to-b from-blue-50 to-background">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
-              <div className="space-y-6 lg:space-y-8">
-                <Badge className="w-fit" variant="secondary">
-                  <Star className="h-3 w-3 mr-1 fill-blue-600 text-blue-600" />
-                  Trusted by 5,000+ Students
-                </Badge>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-balance leading-tight">
-                  Master Your Skills with <span className="text-blue-600">Expert-Led Courses</span>
-                </h1>
-                <p className="text-lg sm:text-xl text-muted-foreground text-pretty leading-relaxed max-w-xl">
-                  Learn from industry professionals through comprehensive ebooks and interactive live courses. Build
-                  real-world projects and advance your career.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <Button size="lg" className="text-base bg-blue-600 hover:bg-blue-700" asChild>
-                    <Link href="#ebooks">
-                      Browse Ebooks <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button size="lg" variant="outline" className="text-base bg-transparent" asChild>
-                    <Link href="#courses">View Live Courses</Link>
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-6 pt-4">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-blue-600" />
-                    <span className="text-sm text-muted-foreground">Lifetime Access</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-blue-600" />
-                    <span className="text-sm text-muted-foreground">Expert Support</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-blue-600" />
-                    <span className="text-sm text-muted-foreground">Certificate</span>
-                  </div>
-                </div>
+     
+
+        <section className="relative bg-gradient-to-b from-blue-50 to-background overflow-hidden">
+        {/* Floating Icons */}
+        <div className="absolute inset-0 pointer-events-none">
+          <BookOpen className="absolute top-20 left-10 w-8 h-8 text-blue-400/30 animate-float" />
+          <Video className="absolute top-40 right-20 w-10 h-10 text-blue-500/30 animate-float-delayed" />
+          <Award className="absolute bottom-32 left-20 w-9 h-9 text-blue-400/30 animate-float" />
+          <Users className="absolute bottom-20 right-32 w-8 h-8 text-blue-500/30 animate-float-delayed" />
+          <Star className="absolute top-32 right-40 w-7 h-7 text-blue-400/30 animate-float" />
+        </div>
+
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+            <div className="space-y-6 lg:space-y-8">
+              <Badge className="w-fit" variant="secondary">
+                <Star className="h-3 w-3 mr-1 fill-blue-600 text-blue-600" />
+                Trusted by 5,000+ Students
+              </Badge>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-balance leading-tight">
+                Master Your Skills with <span className="text-blue-600">Expert-Led Courses</span>
+              </h1>
+              <p className="text-lg sm:text-xl text-muted-foreground text-pretty leading-relaxed max-w-xl">
+                Learn from industry professionals through comprehensive ebooks and interactive live courses. Build
+                real-world projects and advance your career.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Button size="lg" className="text-base bg-blue-600 hover:bg-blue-700" asChild>
+                  <Link href="#ebooks">
+                    Browse Ebooks <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="text-base bg-transparent" asChild>
+                  <Link href="#courses">View Live Courses</Link>
+                </Button>
               </div>
-              <div className="relative lg:h-[500px] h-[300px] rounded-2xl overflow-hidden shadow-2xl">
-                <Image
-                  src="/students-learning-online-with-laptop-and-books-mod.jpg"
-                  alt="Students learning online"
-                  fill
-                  className="object-cover"
-                  priority
-                />
+              <div className="flex flex-wrap gap-6 pt-4">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm text-muted-foreground">Lifetime Access</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm text-muted-foreground">Expert Support</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm text-muted-foreground">Certificate</span>
+                </div>
               </div>
             </div>
+
+            {/* Teacher Image with Hover Animation */}
+            <div className="relative lg:h-[600px] h-[400px] group">
+              <div className="relative w-full h-full overflow-hidden transition-all duration-500">
+                <Image
+                  src="/uploads/IMG_3781-removebg-preview (1).png"
+                  alt="Neelam Academy - Expert Teacher"
+                  fill
+                  className="object-contain transition-transform duration-700 group-hover:scale-105"
+                  priority
+                />
+                {/* Gradient Overlay on Hover */}
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-600/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </div>
+
+              {/* Decorative Elements */}
+              <div className="absolute -top-4 -right-4 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl animate-pulse" />
+              <div
+                className="absolute -bottom-4 -left-4 w-32 h-32 bg-blue-400/10 rounded-full blur-2xl animate-pulse"
+                style={{ animationDelay: "1s" }}
+              />
+            </div>
           </div>
-        </section>
+        </div>
+      </section>
+
+      {/* Webinar Banner - appears below hero */}
+      <WebinarBanner />
 
         <section className="border-y bg-blue-50/50">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
@@ -222,7 +250,7 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
+        <section id="why" className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24">
           <div className="text-center mb-12 sm:mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold mb-3 sm:mb-4">Why Choose Us?</h2>
             <p className="text-muted-foreground text-lg sm:text-xl max-w-2xl mx-auto leading-relaxed">

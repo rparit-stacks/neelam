@@ -1,0 +1,12 @@
+# robots.txt for Neelam Academy
+
+User-agent: *
+Allow: /
+
+# Disallow admin and API routes
+Disallow: /admin/
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://helloneelammaam.com/sitemap.xml
+
