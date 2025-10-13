@@ -54,7 +54,7 @@ export interface Purchase {
   id: string
   user_email: string
   user_name: string | null
-  product_type: "ebook" | "course"
+  product_type: "ebook" | "course" | "note"
   product_id: string
   amount: number
   razorpay_order_id: string | null
@@ -79,6 +79,28 @@ export interface Webinar {
   webinar_link: string
   banner_image: string | null
   is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Note {
+  id: string
+  title: string
+  description: string | null
+  topic: string
+  content: string
+  file_name: string
+  category: string | null
+  tags: string[] | null
+  download_count: number
+  is_active: boolean
+  file_url: string | null
+  file_size: number | null
+  cover_image: string | null
+  author: string | null
+  reading_time: number | null
+  payment_type: "free" | "paid"
+  price: number | null
   created_at: string
   updated_at: string
 }

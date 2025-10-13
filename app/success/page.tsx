@@ -14,6 +14,7 @@ function SuccessContent() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get("orderId")
   const [order, setOrder] = useState<any>(null)
+  const [note, setNote] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -21,10 +22,23 @@ function SuccessContent() {
       if (!orderId) return
 
       const supabase = getSupabase()
-      const { data, error } = await supabase.from("orders").select("*").eq("id", orderId).single()
+      const { data, error } = await supabase.from("purchases").select("*").eq("id", orderId).single()
 
       if (!error && data) {
         setOrder(data)
+        
+        // If it's a note purchase, fetch the note details
+        if (data.product_type === "note") {
+          const { data: noteData } = await supabase
+            .from("notes")
+            .select("title, file_name, file_url, file_size")
+            .eq("id", data.product_id)
+            .single()
+          
+          if (noteData) {
+            setNote(noteData)
+          }
+        }
       }
       setLoading(false)
     }
@@ -32,12 +46,39 @@ function SuccessContent() {
     fetchOrder()
   }, [orderId])
 
+  const handleDownload = () => {
+    if (note?.file_url) {
+      const link = document.createElement('a')
+      link.href = note.file_url
+      link.download = note.file_name
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <main className="flex-1 flex items-center justify-center bg-blue-50/30">
+          <div className="text-center space-y-4">
+            <div className="mx-auto h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+              <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Loading Your Purchase</h3>
+              <p className="text-sm text-gray-600 mt-2">
+                Please wait while we fetch your order details...
+              </p>
+            </div>
+            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            </div>
+          </div>
         </main>
         <Footer />
       </div>
@@ -77,6 +118,36 @@ function SuccessContent() {
                       <span className="text-muted-foreground">Payment ID</span>
                       <span className="font-mono text-xs">{order.razorpay_payment_id}</span>
                     </div>
+                  </div>
+                )}
+
+                {/* Note Download Section */}
+                {note && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Download className="h-6 w-6 text-green-600" />
+                      <div>
+                        <h3 className="font-semibold text-green-800">Your Note is Ready!</h3>
+                        <p className="text-sm text-green-600">{note.title}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">File:</span>
+                        <span className="font-medium">{note.file_name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Size:</span>
+                        <span className="font-medium">{note.file_size ? `${(note.file_size / 1024).toFixed(1)} KB` : 'Unknown'}</span>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleDownload}
+                      className="w-full bg-green-600 hover:bg-green-700 gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Download Note Now
+                    </Button>
                   </div>
                 )}
 

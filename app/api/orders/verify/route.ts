@@ -59,6 +59,14 @@ export async function POST(request: NextRequest) {
 
     let mailSent = false
     try {
+      console.log("[verify] Email check:", {
+        hasSMTPHost: !!process.env.SMTP_HOST,
+        hasSMTPUser: !!process.env.SMTP_USER,
+        hasSMTPPass: !!process.env.SMTP_PASS,
+        hasUserEmail: !!order?.user_email,
+        userEmail: order?.user_email
+      })
+      
       if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && order?.user_email) {
         const transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST,
@@ -70,16 +78,78 @@ export async function POST(request: NextRequest) {
         const fromName = process.env.SMTP_FROM_NAME || "Neelam Academy"
         const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
 
-        const subject = "Payment Confirmation"
-        const text = `Hi ${order.user_name || "there"},\n\nWe have received your payment successfully.\n\nOrder ID: ${orderId}\nAmount: ₹${order.amount}\nProduct: ${order.product_type}\n\nThank you for your purchase!\n${fromName}`
-        const html = `<p>Hi ${order.user_name || "there"},</p><p>We have received your payment successfully.</p><ul><li><strong>Order ID:</strong> ${orderId}</li><li><strong>Amount:</strong> ₹${order.amount}</li><li><strong>Product:</strong> ${order.product_type}</li></ul><p>Thank you for your purchase!</p><p>${fromName}</p>`
+        let subject = "Payment Confirmation"
+        let text = `Hi ${order.user_name || "there"},\n\nWe have received your payment successfully.\n\nOrder ID: ${orderId}\nAmount: ₹${order.amount}\nProduct: ${order.product_type}\n\nThank you for your purchase!\n${fromName}`
+        let html = `<p>Hi ${order.user_name || "there"},</p><p>We have received your payment successfully.</p><ul><li><strong>Order ID:</strong> ${orderId}</li><li><strong>Amount:</strong> ₹${order.amount}</li><li><strong>Product:</strong> ${order.product_type}</li></ul><p>Thank you for your purchase!</p><p>${fromName}</p>`
 
-        await transporter.sendMail({
+        // Handle note delivery
+        if (order.product_type === "note") {
+          const { data: note } = await supabase
+            .from("notes")
+            .select("title, content, file_name, file_url, file_size")
+            .eq("id", order.product_id)
+            .single()
+
+          if (note) {
+            subject = `Your Note: ${note.title} - Neelam Academy`
+            
+            if (note.file_url) {
+              // File-based note
+              text = `Hi ${order.user_name || "there"},\n\nThank you for your purchase! Here's your note:\n\nTitle: ${note.title}\nFile: ${note.file_name}\nFile Size: ${note.file_size ? `${(note.file_size / 1024).toFixed(1)} KB` : 'Unknown'}\n\nDownload Link: ${note.file_url}\n\nOrder ID: ${orderId}\nAmount: ₹${order.amount}\n\nThank you for choosing Neelam Academy!\n${fromName}`
+              html = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #2563eb;">Your Note: ${note.title}</h2>
+                  <p>Hi ${order.user_name || "there"},</p>
+                  <p>Thank you for your purchase! Here's your note:</p>
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0;">${note.title}</h3>
+                    <p><strong>File:</strong> ${note.file_name}</p>
+                    <p><strong>Size:</strong> ${note.file_size ? `${(note.file_size / 1024).toFixed(1)} KB` : 'Unknown'}</p>
+                    <div style="text-align: center; margin: 20px 0;">
+                      <a href="${note.file_url}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">Download Note</a>
+                    </div>
+                  </div>
+                  <p><strong>Order ID:</strong> ${orderId}</p>
+                  <p><strong>Amount:</strong> ₹${order.amount}</p>
+                  <p>Thank you for choosing Neelam Academy!</p>
+                  <p>${fromName}</p>
+                </div>
+              `
+            } else {
+              // Content-based note (fallback)
+              text = `Hi ${order.user_name || "there"},\n\nThank you for your purchase! Here's your note:\n\nTitle: ${note.title}\nFile: ${note.file_name}\n\nNote Content:\n${note.content}\n\nOrder ID: ${orderId}\nAmount: ₹${order.amount}\n\nThank you for choosing Neelam Academy!\n${fromName}`
+              html = `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                  <h2 style="color: #2563eb;">Your Note: ${note.title}</h2>
+                  <p>Hi ${order.user_name || "there"},</p>
+                  <p>Thank you for your purchase! Here's your note:</p>
+                  <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="margin-top: 0;">${note.title}</h3>
+                    <p><strong>File:</strong> ${note.file_name}</p>
+                    <div style="background: white; padding: 15px; border-radius: 4px; white-space: pre-wrap; font-family: monospace; font-size: 14px;">${note.content}</div>
+                  </div>
+                  <p><strong>Order ID:</strong> ${orderId}</p>
+                  <p><strong>Amount:</strong> ₹${order.amount}</p>
+                  <p>Thank you for choosing Neelam Academy!</p>
+                  <p>${fromName}</p>
+                </div>
+              `
+            }
+          }
+        }
+
+        const mailResult = await transporter.sendMail({
           from: `${fromName} <${fromEmail}>`,
           to: order.user_email,
           subject,
           text,
           html,
+        })
+        
+        console.log("[verify] Email sent successfully:", {
+          messageId: mailResult.messageId,
+          to: order.user_email,
+          subject: subject
         })
         mailSent = true
       } else {

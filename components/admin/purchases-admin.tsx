@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { MoreVertical, Mail, Eye, X } from "lucide-react"
+import { MoreVertical, Mail, Eye, X, FileText, BookOpen, Video } from "lucide-react"
 import { getSupabase } from "@/lib/supabase"
 import type { Purchase } from "@/lib/types"
 
@@ -98,9 +98,18 @@ export function PurchasesAdmin() {
                     {purchase.payment_status}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {purchase.product_type} • ₹{purchase.amount} • {new Date(purchase.created_at).toLocaleDateString()}
-                </p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    {purchase.product_type === "note" && <FileText className="h-4 w-4" />}
+                    {purchase.product_type === "ebook" && <BookOpen className="h-4 w-4" />}
+                    {purchase.product_type === "course" && <Video className="h-4 w-4" />}
+                    <span className="capitalize">{purchase.product_type}</span>
+                  </div>
+                  <span>•</span>
+                  <span>₹{purchase.amount}</span>
+                  <span>•</span>
+                  <span>{new Date(purchase.created_at).toLocaleDateString()}</span>
+                </div>
                 {purchase.razorpay_payment_id && (
                   <p className="text-xs text-muted-foreground mt-1">Payment ID: {purchase.razorpay_payment_id}</p>
                 )}

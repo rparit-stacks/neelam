@@ -21,6 +21,7 @@ function CheckoutContent() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [processing, setProcessing] = useState(false)
+  const [verifying, setVerifying] = useState(false)
   const [product, setProduct] = useState<any>(null)
   const [formData, setFormData] = useState({
     name: "",
@@ -39,7 +40,14 @@ function CheckoutContent() {
       }
 
       const supabase = getSupabase()
-      const table = type === "ebook" ? "ebooks" : "live_courses"
+      let table = ""
+      if (type === "ebook") {
+        table = "ebooks"
+      } else if (type === "course") {
+        table = "live_courses"
+      } else if (type === "note") {
+        table = "notes"
+      }
 
       const { data } = await supabase.from(table).select("*").eq("id", id).single()
 
@@ -74,7 +82,9 @@ function CheckoutContent() {
       if (!response.ok) {
         const errorData = await response.json()
         console.error("[v0] Order creation failed:", errorData)
-        throw new Error(errorData.error || "Failed to create order")
+        const errorMessage = errorData.error || "Failed to create order"
+        console.error("[v0] Error details:", errorMessage)
+        throw new Error(errorMessage)
       }
 
       const { orderId, razorpayOrderId, razorpayKeyId } = await response.json()
@@ -95,28 +105,37 @@ function CheckoutContent() {
         order_id: razorpayOrderId,
         handler: async (paymentResponse: any) => {
           console.log("[v0] Payment successful, verifying...")
-          // Verify payment
-          const verifyResponse = await fetch("/api/orders/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              orderId,
-              razorpayOrderId: paymentResponse.razorpay_order_id,
-              razorpayPaymentId: paymentResponse.razorpay_payment_id,
-              razorpaySignature: paymentResponse.razorpay_signature,
-            }),
-          })
+          setVerifying(true) // Show verification loading animation
+          
+          try {
+            // Verify payment
+            const verifyResponse = await fetch("/api/orders/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                orderId,
+                razorpayOrderId: paymentResponse.razorpay_order_id,
+                razorpayPaymentId: paymentResponse.razorpay_payment_id,
+                razorpaySignature: paymentResponse.razorpay_signature,
+              }),
+            })
 
-          const verifyJson = await verifyResponse.json()
-          const { success } = verifyJson
+            const verifyJson = await verifyResponse.json()
+            const { success } = verifyJson
 
-          if (success) {
-            console.log("[v0] Payment verified successfully")
-            toast.success("Payment successful!")
-            router.push(`/success?orderId=${orderId}`)
-          } else {
-            console.error("[v0] Payment verification failed", verifyJson)
-            toast.error(verifyJson?.error || "Payment verification failed")
+            if (success) {
+              console.log("[v0] Payment verified successfully")
+              toast.success("Payment successful! Redirecting...")
+              router.push(`/success?orderId=${orderId}`)
+            } else {
+              console.error("[v0] Payment verification failed", verifyJson)
+              toast.error(verifyJson?.error || "Payment verification failed")
+              setVerifying(false) // Hide loading on error
+            }
+          } catch (error) {
+            console.error("[v0] Verification error:", error)
+            toast.error("Payment verification failed. Please try again.")
+            setVerifying(false) // Hide loading on error
           }
         },
         prefill: {
@@ -133,6 +152,7 @@ function CheckoutContent() {
       razorpay.on("payment.failed", (response: any) => {
         console.error("[v0] Payment failed:", response.error)
         toast.error("Payment failed. Please try again.")
+        setVerifying(false) // Hide loading on payment failure
       })
       razorpay.open()
     } catch (error) {
@@ -158,6 +178,30 @@ function CheckoutContent() {
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
+
+      {/* Payment Verification Loading Overlay */}
+      {verifying && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg shadow-2xl p-8 max-w-md w-full mx-4">
+            <div className="text-center space-y-4">
+              <div className="mx-auto h-16 w-16 rounded-full bg-blue-100 flex items-center justify-center">
+                <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Verifying Payment</h3>
+                <p className="text-sm text-gray-600 mt-2">
+                  Please wait while we verify your payment and prepare your content...
+                </p>
+              </div>
+              <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
+                <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+                <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="flex-1 bg-blue-50/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">

@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("[v0] Database error:", error)
+      console.error("[v0] Product type being inserted:", productType)
+      console.error("[v0] Full error details:", JSON.stringify(error, null, 2))
       return NextResponse.json({ error: `Database error: ${error.message}` }, { status: 500 })
     }
 

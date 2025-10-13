@@ -6,7 +6,8 @@ import { CoursesAdmin } from "@/components/admin/courses-admin"
 import { PurchasesAdmin } from "@/components/admin/purchases-admin"
 import { EmailAdmin } from "@/components/admin/email-admin"
 import { WebinarAdmin } from "@/components/admin/webinar-admin"
-import { LayoutDashboard, BookOpen, Video, ShoppingCart, Mail, Menu, X, LogOut, Keyboard, Plus, TrendingUp, Presentation } from "lucide-react"
+import { NotesAdmin } from "@/components/admin/notes-admin"
+import { LayoutDashboard, BookOpen, Video, ShoppingCart, Mail, Menu, X, LogOut, Keyboard, Plus, TrendingUp, Presentation, FileText } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { getSupabase } from "@/lib/supabase"
 import Image from "next/image"
@@ -27,9 +28,10 @@ export function AdminDashboard() {
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard, shortcut: "1" },
     { id: "ebooks", label: "Ebooks", icon: BookOpen, shortcut: "2" },
     { id: "courses", label: "Live Courses", icon: Video, shortcut: "3" },
-    { id: "webinars", label: "Webinars", icon: Presentation, shortcut: "4" },
-    { id: "purchases", label: "Purchases", icon: ShoppingCart, shortcut: "5" },
-    { id: "email", label: "Email System", icon: Mail, shortcut: "6" },
+    { id: "notes", label: "Free Notes", icon: FileText, shortcut: "4" },
+    { id: "webinars", label: "Webinars", icon: Presentation, shortcut: "5" },
+    { id: "purchases", label: "Purchases", icon: ShoppingCart, shortcut: "6" },
+    { id: "email", label: "Email System", icon: Mail, shortcut: "7" },
   ]
 
   // Keyboard shortcuts
@@ -191,6 +193,7 @@ export function AdminDashboard() {
           </header>
 
           <main className="flex-1 overflow-y-auto p-6">
+            {activeTab === "notes" && <NotesAdmin />}
             {activeTab === "webinars" && <WebinarAdmin />}
             {activeTab === "dashboard" && (
               <div className="space-y-6">
@@ -198,7 +201,7 @@ export function AdminDashboard() {
                 <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg p-6 text-white">
                   <h2 className="text-2xl font-bold mb-2">Welcome Back! 👋</h2>
                   <p className="text-blue-100 mb-6">Quick actions to manage your platform</p>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
                     <button
                       onClick={() => setActiveTab("ebooks")}
                       className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-lg p-4 text-left transition-all hover:scale-105"
@@ -214,6 +217,14 @@ export function AdminDashboard() {
                       <Plus className="h-6 w-6 mb-2" />
                       <div className="font-semibold">Add Course</div>
                       <div className="text-sm text-blue-100">Create live course</div>
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("notes")}
+                      className="bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30 rounded-lg p-4 text-left transition-all hover:scale-105"
+                    >
+                      <FileText className="h-6 w-6 mb-2" />
+                      <div className="font-semibold">Add Note</div>
+                      <div className="text-sm text-blue-100">Create free note</div>
                     </button>
                     <button
                       onClick={() => setActiveTab("webinars")}

@@ -21,6 +21,9 @@ export function Header() {
           <Link href="/courses" className="text-sm font-medium hover:text-primary transition-colors">
             Live Courses
           </Link>
+          <Link href="/notes" className="text-sm font-medium hover:text-primary transition-colors">
+            Free Notes
+          </Link>
           <Link href="/contact" className="text-sm font-medium hover:text-primary transition-colors">
             Contact
           </Link>
@@ -50,6 +53,9 @@ export function Header() {
                 </Link>
                 <Link href="/courses" className="text-lg font-medium hover:text-primary transition-colors">
                   Live Courses
+                </Link>
+                <Link href="/notes" className="text-lg font-medium hover:text-primary transition-colors">
+                  Free Notes
                 </Link>
                 <Link href="/contact" className="text-lg font-medium hover:text-primary transition-colors">
                   Contact
