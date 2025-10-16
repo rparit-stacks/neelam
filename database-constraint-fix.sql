@@ -14,3 +14,5 @@ FROM pg_constraint
 WHERE conname = 'purchases_product_type_check';
 
 
+
+

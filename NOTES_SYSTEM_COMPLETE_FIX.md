@@ -168,3 +168,5 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
 The system is now complete and should handle all note purchase scenarios properly!
 
 
+
+

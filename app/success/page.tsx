@@ -15,6 +15,7 @@ function SuccessContent() {
   const orderId = searchParams.get("orderId")
   const [order, setOrder] = useState<any>(null)
   const [note, setNote] = useState<any>(null)
+  const [ebook, setEbook] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -39,6 +40,19 @@ function SuccessContent() {
             setNote(noteData)
           }
         }
+        
+        // If it's an eBook purchase, fetch the eBook details
+        if (data.product_type === "ebook") {
+          const { data: ebookData } = await supabase
+            .from("ebooks")
+            .select("title, author, pdf_url, file_name, file_size")
+            .eq("id", data.product_id)
+            .single()
+          
+          if (ebookData) {
+            setEbook(ebookData)
+          }
+        }
       }
       setLoading(false)
     }
@@ -51,6 +65,14 @@ function SuccessContent() {
       const link = document.createElement('a')
       link.href = note.file_url
       link.download = note.file_name
+      link.target = '_blank'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else if (ebook?.pdf_url) {
+      const link = document.createElement('a')
+      link.href = ebook.pdf_url
+      link.download = ebook.file_name || 'ebook.pdf'
       link.target = '_blank'
       document.body.appendChild(link)
       link.click()
@@ -147,6 +169,39 @@ function SuccessContent() {
                     >
                       <Download className="h-4 w-4" />
                       Download Note Now
+                    </Button>
+                  </div>
+                )}
+
+                {/* eBook Download Section */}
+                {ebook && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Download className="h-6 w-6 text-blue-600" />
+                      <div>
+                        <h3 className="font-semibold text-blue-800">Your eBook is Ready!</h3>
+                        <p className="text-sm text-blue-600">{ebook.title}</p>
+                        {ebook.author && (
+                          <p className="text-xs text-blue-500">by {ebook.author}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">File:</span>
+                        <span className="font-medium">{ebook.file_name || 'eBook.pdf'}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Size:</span>
+                        <span className="font-medium">{ebook.file_size ? `${(ebook.file_size / 1024 / 1024).toFixed(1)} MB` : 'Unknown'}</span>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleDownload}
+                      className="w-full bg-blue-600 hover:bg-blue-700 gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      📖 Download eBook Now
                     </Button>
                   </div>
                 )}

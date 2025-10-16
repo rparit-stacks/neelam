@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
         const transporter = nodemailer.createTransport({
           host: process.env.SMTP_HOST,
           port: Number(process.env.SMTP_PORT) || 465,
-          secure: true,
+          secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for 587
           auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
         })
 
@@ -135,6 +135,61 @@ export async function POST(request: NextRequest) {
                 </div>
               `
             }
+          }
+        }
+
+        // Handle eBook delivery
+        if (order.product_type === "ebook") {
+          const { data: ebook } = await supabase
+            .from("ebooks")
+            .select("title, author, pdf_url, file_name, file_size")
+            .eq("id", order.product_id)
+            .single()
+
+          if (ebook && ebook.pdf_url) {
+            subject = `Your eBook: ${ebook.title} - Neelam Academy`
+            
+            text = `Hi ${order.user_name || "there"},\n\nThank you for your purchase! Here's your eBook:\n\nTitle: ${ebook.title}\nAuthor: ${ebook.author || 'Unknown'}\nFile: ${ebook.file_name || 'eBook.pdf'}\n\nDownload Link: ${ebook.pdf_url}\n\nOrder ID: ${orderId}\nAmount: ₹${order.amount}\n\nThank you for choosing Neelam Academy!\n${fromName}`
+            
+            html = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #2563eb;">Your eBook: ${ebook.title}</h2>
+                <p>Hi ${order.user_name || "there"},</p>
+                <p>Thank you for your purchase! Here's your eBook:</p>
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                  <h3 style="margin-top: 0; color: #1f2937;">${ebook.title}</h3>
+                  <p><strong>Author:</strong> ${ebook.author || 'Unknown'}</p>
+                  <p><strong>File:</strong> ${ebook.file_name || 'eBook.pdf'}</p>
+                  <div style="text-align: center; margin: 20px 0;">
+                    <a href="${ebook.pdf_url}" style="background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">📖 Download eBook</a>
+                  </div>
+                </div>
+                <p><strong>Order ID:</strong> ${orderId}</p>
+                <p><strong>Amount:</strong> ₹${order.amount}</p>
+                <p>Thank you for choosing Neelam Academy!</p>
+                <p>${fromName}</p>
+              </div>
+            `
+          } else if (ebook) {
+            // eBook exists but no PDF file
+            subject = `eBook Purchase Confirmation: ${ebook.title} - Neelam Academy`
+            text = `Hi ${order.user_name || "there"},\n\nThank you for your purchase! Unfortunately, the eBook file is not available at the moment. Please contact our support team.\n\nTitle: ${ebook.title}\nAuthor: ${ebook.author || 'Unknown'}\n\nOrder ID: ${orderId}\nAmount: ₹${order.amount}\n\nThank you for choosing Neelam Academy!\n${fromName}`
+            html = `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #dc2626;">eBook Purchase Confirmation</h2>
+                <p>Hi ${order.user_name || "there"},</p>
+                <p>Thank you for your purchase! Unfortunately, the eBook file is not available at the moment. Please contact our support team.</p>
+                <div style="background: #fef2f2; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626;">
+                  <h3 style="margin-top: 0; color: #dc2626;">${ebook.title}</h3>
+                  <p><strong>Author:</strong> ${ebook.author || 'Unknown'}</p>
+                  <p style="color: #dc2626; font-weight: bold;">⚠️ File not available - Please contact support</p>
+                </div>
+                <p><strong>Order ID:</strong> ${orderId}</p>
+                <p><strong>Amount:</strong> ₹${order.amount}</p>
+                <p>Thank you for choosing Neelam Academy!</p>
+                <p>${fromName}</p>
+              </div>
+            `
           }
         }
 

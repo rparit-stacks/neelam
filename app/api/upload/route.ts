@@ -6,16 +6,30 @@ export async function POST(request: Request) {
     const formData = await request.formData()
     const file = formData.get("file") as File | null
     const subfolder = (formData.get("folder") as string | null) || ""
+    const customFilename = formData.get("filename") as string | null
 
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 })
     }
 
+    // Validate file size (max 100MB)
+    if (file.size > 100 * 1024 * 1024) {
+      return NextResponse.json({ error: "File too large. Maximum size is 100MB." }, { status: 400 })
+    }
+
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_")
-    const uniqueName = `${Date.now()}-${safeName}`
-    const objectPath = [subfolder, uniqueName].filter(Boolean).join("/")
+    
+    // Use custom filename if provided, otherwise generate one
+    let finalFilename
+    if (customFilename) {
+      finalFilename = customFilename
+    } else {
+      const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, "_")
+      finalFilename = `${Date.now()}-${safeName}`
+    }
+    
+    const objectPath = [subfolder, finalFilename].filter(Boolean).join("/")
 
     const supabase = await createServerClient()
 
@@ -35,7 +49,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Failed to get public URL" }, { status: 500 })
     }
 
-    return NextResponse.json({ url: publicUrl.publicUrl })
+    return NextResponse.json({ 
+      url: publicUrl.publicUrl,
+      filename: finalFilename,
+      size: file.size,
+      type: file.type
+    })
   } catch (error) {
     console.error("[upload] Failed:", error)
     return NextResponse.json({ error: "Upload failed" }, { status: 500 })

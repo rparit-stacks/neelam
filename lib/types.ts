@@ -5,6 +5,9 @@ export interface Ebook {
   price: number
   cover_image: string | null
   pdf_url: string | null
+  file_name: string | null
+  file_size: number | null
+  file_type: string | null
   author: string | null
   pages: number | null
   published_date: string | null

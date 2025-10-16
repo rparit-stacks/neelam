@@ -6,7 +6,7 @@ import nodemailer from "nodemailer"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { to, subject, type, noteId, orderId } = body
+    const { to, subject, body: emailBody, isHtml, type, noteId, orderId } = body
 
     if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
       console.error("[email] SMTP not configured")
@@ -14,6 +14,38 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = await createServerClient()
+
+    // Handle general email sending (from admin panel)
+    if (to && subject && emailBody) {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 465,
+        secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for 587
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      })
+
+      const fromName = process.env.SMTP_FROM_NAME || "Neelam Academy"
+      const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER
+
+      await transporter.sendMail({
+        from: `${fromName} <${fromEmail}>`,
+        to: to,
+        subject: subject,
+        text: isHtml ? undefined : emailBody,
+        html: isHtml ? emailBody : undefined,
+      })
+
+      // Log email to database
+      await supabase.from("email_logs").insert({
+        recipient_email: to,
+        subject: subject,
+        body: emailBody,
+        status: "sent"
+      })
+
+      console.log("[email] General email sent successfully to:", to)
+      return NextResponse.json({ success: true, message: "Email sent successfully" })
+    }
 
     if (type === 'note_delivery' && noteId) {
       // Fetch note details
@@ -34,10 +66,10 @@ export async function POST(request: NextRequest) {
         .eq("id", orderId)
         .single()
 
-      const transporter = nodemailer.createTransporter({
+      const transporter = nodemailer.createTransport({
         host: process.env.SMTP_HOST,
         port: Number(process.env.SMTP_PORT) || 465,
-        secure: true,
+        secure: Number(process.env.SMTP_PORT) === 465, // true for 465, false for 587
         auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
       })
 

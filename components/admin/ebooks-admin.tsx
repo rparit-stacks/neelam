@@ -25,8 +25,12 @@ export function EbooksAdmin() {
     pages: "",
     category: "",
     cover_image: "",
+    pdf_url: "",
+    file_name: "",
+    file_size: 0,
   })
   const [uploading, setUploading] = useState(false)
+  const [uploadingPdf, setUploadingPdf] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -55,6 +59,9 @@ export function EbooksAdmin() {
       pages: formData.pages ? Number.parseInt(formData.pages) : null,
       category: formData.category,
       cover_image: formData.cover_image || null,
+      pdf_url: formData.pdf_url || null,
+      file_name: formData.file_name || null,
+      file_size: formData.file_size || null,
       updated_at: new Date().toISOString(),
     }
 
@@ -100,6 +107,9 @@ export function EbooksAdmin() {
       pages: ebook.pages?.toString() || "",
       category: ebook.category || "",
       cover_image: ebook.cover_image || "",
+      pdf_url: ebook.pdf_url || "",
+      file_name: ebook.file_name || "",
+      file_size: ebook.file_size || 0,
     })
   }
 
@@ -112,6 +122,9 @@ export function EbooksAdmin() {
       pages: "",
       category: "",
       cover_image: "",
+      pdf_url: "",
+      file_name: "",
+      file_size: 0,
     })
   }
 
@@ -226,6 +239,111 @@ export function EbooksAdmin() {
               )}
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="pdf_file">eBook File * (PDF, DOCX, DOC)</Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-400 transition-colors">
+                <input
+                  type="file"
+                  id="pdf_file"
+                  accept=".pdf,.docx,.doc"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      // Validate file size (max 100MB)
+                      if (file.size > 100 * 1024 * 1024) {
+                        toast({
+                          title: "File Too Large",
+                          description: "File must be less than 100MB",
+                          variant: "destructive",
+                        })
+                        return
+                      }
+                      
+                      // Validate file type
+                      const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword']
+                      const allowedExtensions = ['.pdf', '.docx', '.doc']
+                      const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase()
+                      
+                      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+                        toast({
+                          title: "Invalid File Type",
+                          description: "Please upload PDF, DOCX, or DOC file",
+                          variant: "destructive",
+                        })
+                        return
+                      }
+                      
+                      setUploadingPdf(true)
+                      try {
+                        // Create proper filename with timestamp
+                        const timestamp = Date.now()
+                        const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'pdf'
+                        const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_').replace(/\s+/g, '_')
+                        const newFileName = `${timestamp}_${cleanFileName}`
+                        
+                        const data = new FormData()
+                        data.append("file", file)
+                        data.append("folder", "ebooks")
+                        data.append("filename", newFileName) // Custom filename
+                        
+                        const res = await fetch("/api/upload", { method: "POST", body: data })
+                        const json = await res.json()
+                        
+                        if (!res.ok) {
+                          throw new Error(json.error || "Upload failed")
+                        }
+                        
+                        setFormData({ 
+                          ...formData, 
+                          pdf_url: json.url,
+                          file_name: json.filename || newFileName,
+                          file_size: json.size || file.size
+                        })
+                        
+                        toast({
+                          title: "Success",
+                          description: `${fileExtension.toUpperCase()} file uploaded successfully (${(file.size / 1024 / 1024).toFixed(1)} MB)`,
+                        })
+                      } catch (error) {
+                        console.error("Upload error:", error)
+                        toast({
+                          title: "Upload Failed",
+                          description: "Failed to upload file. Please try again.",
+                          variant: "destructive",
+                        })
+                      } finally {
+                        setUploadingPdf(false)
+                      }
+                    }
+                  }}
+                  className="hidden"
+                  required
+                />
+                <label htmlFor="pdf_file" className="cursor-pointer">
+                  <div className="flex flex-col items-center">
+                    <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    {uploadingPdf ? (
+                      <p className="text-blue-600">Uploading file...</p>
+                    ) : formData.pdf_url ? (
+                      <div className="text-green-600">
+                        <p className="font-medium">✓ File Uploaded</p>
+                        <p className="text-sm">{formData.file_name}</p>
+                        <p className="text-xs">{formData.file_size ? `${(formData.file_size / 1024 / 1024).toFixed(1)} MB` : 'Unknown size'}</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-gray-600 mb-2">Click to upload file</p>
+                        <p className="text-sm text-gray-500">Supports: PDF, DOCX, DOC</p>
+                        <p className="text-sm text-gray-500">Maximum file size: 100MB</p>
+                      </div>
+                    )}
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <div className="flex gap-2">
               <Button type="submit">{editing ? "Update Ebook" : "Create Ebook"}</Button>
               {editing && (
@@ -259,6 +377,22 @@ export function EbooksAdmin() {
                   <p className="text-sm text-muted-foreground">
                     {ebook.author} • ₹{ebook.price}
                   </p>
+                  <div className="flex items-center gap-4 mt-1">
+                    {ebook.pdf_url ? (
+                      <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                        ✓ PDF Available
+                      </span>
+                    ) : (
+                      <span className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+                        ⚠ No PDF
+                      </span>
+                    )}
+                    {ebook.file_name && (
+                      <span className="text-xs text-gray-500">
+                        {ebook.file_name}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => handleEdit(ebook)}>

@@ -17,10 +17,20 @@ export async function createServerClient() {
         return cookieStore.get(name)?.value
       },
       set(name: string, value: string, options: any) {
-        cookieStore.set({ name, value, ...options })
+        try {
+          cookieStore.set({ name, value, ...options })
+        } catch (error) {
+          // Ignore cookie setting errors in client components
+          console.warn("Cookie setting failed:", error)
+        }
       },
       remove(name: string, options: any) {
-        cookieStore.set({ name, value: "", ...options })
+        try {
+          cookieStore.set({ name, value: "", ...options })
+        } catch (error) {
+          // Ignore cookie removal errors in client components
+          console.warn("Cookie removal failed:", error)
+        }
       },
     },
   })
